@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
-#include <chrono>
 
 #include "../server/server.h"
 
@@ -19,22 +18,31 @@ int getCountOfSubstr(std::string str, std::string substr) {
 Config parseConfig(const std::string &path) {
     Config conf;
 
-    std::ifstream configurationOfServer(path);
-    int buf1, buf2;
-    std::string buf3;
+    std::ifstream configFile(path);
+    if (configFile.is_open()) {
+        int buf1;
+        std::string  buf2;
 
-    configurationOfServer >> buf1;
-    configurationOfServer >> buf2;
-    configurationOfServer >> buf3;
-    conf.cpuLimit = buf1;
-    conf.threadsLimit = buf2;
-    conf.documentRoot = buf3;
+        configFile >> buf1;
+        configFile >> buf2;
+        conf.threadsLimit = buf1;
+        conf.documentRoot = buf2;
 
-    std::cout << "[LOG] CPU limit: " << conf.cpuLimit << std::endl
-              << "[LOG] Count thread: " << conf.threadsLimit << std::endl
-              << "[LOG] Root directory: " << conf.documentRoot << std::endl;
+        std::cout << "[LOG] Thread count: " << conf.threadsLimit << std::endl
+                  << "[LOG] Root directory: " << conf.documentRoot << std::endl;
 
-    configurationOfServer.close();
+        configFile.close();
+
+        return conf;
+    }
+
+    std::cout << "[LOG] Can't open config file!" << std::endl;
+
+    conf.threadsLimit = 256;
+    conf.documentRoot = "/var/www/html";
+    std::cout << "[LOG] Default configuration:" << std::endl
+             << "[LOG] Thread count: " << conf.threadsLimit << std::endl
+             << "[LOG] Root directory: " << conf.documentRoot << std::endl;
 
     return conf;
 }

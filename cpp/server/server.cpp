@@ -1,10 +1,10 @@
-#include "server.h"
-#include "../utils/utils.h"
 #include <sstream>
 #include <iostream>
 #include <unistd.h>
 #include <thread>
-#include <chrono>
+
+#include "server.h"
+#include "../utils/utils.h"
 
 Server::Server(Config conf, struct sockaddr_in &saun) {
     _conf = conf;
@@ -26,12 +26,11 @@ int Server::InitServer(struct sockaddr_in &saun) {
         return -1;
     }
 
-    std::cout << "IT is ALIVE" << std::endl;
+    std::cout << "server started" << std::endl;
     return 0;
 };
 
 void Server::WaitingForAccept() {
-    std::cout << "PID id: " << getpid() << std::endl;
     while (true) {
         struct sockaddr_un addrConnected;
         socklen_t len = sizeof(addrConnected);
@@ -52,9 +51,15 @@ void Server::ReadData(int clientAddress) {
         perror("recv");
     }
 
-    HTTPRequest request = parseHTTP(recievedData);
-    std::thread clientRequestThread(&Server::Response, this, clientAddress, request);
-    clientRequestThread.detach();
+    counterLock.lock();
+    if (threadCounter < this->_conf.threadsLimit) {
+        HTTPRequest request = parseHTTP(recievedData);
+        std::thread clientRequestThread(&Server::Response, this, clientAddress, request);
+        clientRequestThread.detach();
+        threadCounter++;
+    }
+    counterLock.unlock();
+    // std::cout << "threads: " << threadCounter << std::endl;
 };
 
 void Server::Response(int clientAddress, HTTPRequest clientRequest) {
@@ -82,18 +87,22 @@ void Server::Response(int clientAddress, HTTPRequest clientRequest) {
     } else {
         response.code = METHOD_NOT_ALLOWED;
     }
-    
+
     /*
     std::cout << "[LOG] File was read: " << clientRequest.path << std::endl;
     std::cout << "[LOG] Response code: " << response.code << std::endl;
     */
-    
+
     std::string responseData = getStringFromHTTPResponse(response);
     if (send(clientAddress, &responseData[0], responseData.size(), 0) < 0) {
         perror("send");
     }
 
     close(clientAddress);
+
+    counterLock.lock();
+    threadCounter--;
+    counterLock.unlock();
 }
 
 Server::~Server() {

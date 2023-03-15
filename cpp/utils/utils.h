@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+
 #include "../server/server.h"
 
 Config parseConfig(const std::string& path);
