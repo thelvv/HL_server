@@ -6,6 +6,9 @@
 #include "server.h"
 #include "../utils/utils.h"
 
+int threadCounter = 0;
+std::mutex counterLock;
+
 Server::Server(Config conf, struct sockaddr_in &saun) {
     _conf = conf;
     this->_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -59,6 +62,7 @@ void Server::ReadData(int clientAddress) {
         threadCounter++;
     }
     counterLock.unlock();
+
     // std::cout << "threads: " << threadCounter << std::endl;
 };
 

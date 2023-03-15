@@ -9,6 +9,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <vector>
+#include <mutex>
+
 
 const int MAX_MESSAGE_SIZE = 10000;
 const int DEFAULT_CODE = 0;
@@ -16,8 +18,6 @@ const int DEFAULT_CODE = 0;
 const std::string configPath = "../server.conf";
 const std::string filePath = "../httptest/../";
 
-int threadCounter = 0;
-std::mutex counterLock;
 
 enum supportedCodes {
     OK = 200,
